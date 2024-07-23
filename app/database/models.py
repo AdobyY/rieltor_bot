@@ -36,14 +36,6 @@ class Apartment(Base):
     additional_info: Mapped[str] = mapped_column(String(100), nullable=True)
 
 
-# class Item(Base):
-#     __tablename__ = 'item'
-
-#     id: Mapped[int] = mapped_column(primary_key=True)
-#     name: Mapped[str] = mapped_column(String(25))
-#     description: Mapped[str] = mapped_column(String(120))
-#     price: Mapped[int] = mapped_column()
-#     category: Mapped[int] = mapped_column(ForeignKey('categories.id'))
 
 
 async def async_main():
