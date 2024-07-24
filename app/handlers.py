@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
 import app.database.requests as rq
-from app.database.models import async_session, Apartment
+from app.database.models import async_session, Apartment, SavedApartment
 from app.states import RentFlow
 
 from sqlalchemy.future import select
@@ -113,14 +113,57 @@ async def next_apartment(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 @router.callback_query(F.data == "save")
-async def next_apartment(callback: CallbackQuery, state: FSMContext):
-    await callback.answer(text='Зберегти')
-    await callback.answer()
+async def save_apartment(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    apartments = data.get("apartments", [])
+    current_index = data.get("current_index", 0)
+    apartment = apartments[current_index]
+
+    # Збереження інформації про квартиру в базі
+    async with async_session() as session:
+        async with session.begin():
+            user_id = callback.from_user.id
+            stmt = select(SavedApartment).where(
+                SavedApartment.user_id == user_id,
+                SavedApartment.apartment_id == apartment.id
+            )
+            result = await session.execute(stmt)
+            saved_apartment = result.scalars().first()
+
+            if not saved_apartment:
+                new_saved_apartment = SavedApartment(
+                    user_id=user_id,
+                    apartment_id=apartment.id
+                )
+                session.add(new_saved_apartment)
+                await session.commit()
+                
+                await callback.answer(text='Збережено')
+                await callback.message.edit_reply_markup(reply_markup=await kb.get_prev_next_keyboard(saved=True))
+            else:
+                await callback.answer(text='Цю квартиру вже збережено')
+
 
 @router.callback_query(F.data == "saved")
-async def next_apartment(callback: CallbackQuery, state: FSMContext):
-    await callback.answer(text='Збережено')
-    await callback.answer()
+async def saved_apartment(callback: CallbackQuery, state: FSMContext):
+    await callback.answer(text='Ви вже зберегли цю квартиру')
+
+
+@router.message(Command("show_saved"))
+async def view_saved_apartments(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+
+    async with async_session() as session:
+        stmt = select(Apartment).join(SavedApartment).where(SavedApartment.user_id == user_id)
+        result = await session.execute(stmt)
+        saved_apartments = result.scalars().all()
+
+    if not saved_apartments:
+        await message.answer("Ви не зберегли жодної квартири.")
+        return
+
+    await state.update_data(apartments=saved_apartments, current_index=0)
+    await send_apartment_message(message, saved_apartments, 0)
 
 
 
