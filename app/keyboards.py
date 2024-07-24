@@ -57,12 +57,14 @@ async def get_regions_keyboard(selected_regions=None):
     
     return keyboard
 
-
-prev_next = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text="⬅️ Назад", callback_data="prev"),
-                InlineKeyboardButton(text="Вперед ➡️", callback_data="next")
+async def get_prev_next_keyboard(saved=True):
+    keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="⬅️ Назад", callback_data="prev"),
+                    InlineKeyboardButton(text="Збережено" if saved else "Зберегти", callback_data="saved" if saved else "save"),
+                    InlineKeyboardButton(text="Вперед ➡️", callback_data="next")
+                ]
             ]
-        ]
-    )
+        )
+    return keyboard

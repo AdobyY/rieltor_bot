@@ -112,6 +112,16 @@ async def next_apartment(callback: CallbackQuery, state: FSMContext):
         await send_apartment_message(callback, apartments, new_index)
     await callback.answer()
 
+@router.callback_query(F.data == "save")
+async def next_apartment(callback: CallbackQuery, state: FSMContext):
+    await callback.answer(text='Зберегти')
+    await callback.answer()
+
+@router.callback_query(F.data == "saved")
+async def next_apartment(callback: CallbackQuery, state: FSMContext):
+    await callback.answer(text='Збережено')
+    await callback.answer()
+
 
 
 async def search_results(message: Message, state: FSMContext):
@@ -160,14 +170,14 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
 
     if isinstance(entity, Message):
         try:
-            await entity.edit_text(result_text, reply_markup=kb.prev_next)
+            await entity.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(False))
         except TelegramBadRequest:
-            await entity.answer(result_text, reply_markup=kb.prev_next)
+            await entity.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(False))
     elif isinstance(entity, CallbackQuery):
         try:
-            await entity.message.edit_text(result_text, reply_markup=kb.prev_next)
+            await entity.message.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(False))
         except TelegramBadRequest:
-            await entity.message.answer(result_text, reply_markup=kb.prev_next)
+            await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(False))
 
 
 @router.message(Command("help"))
