@@ -4,13 +4,22 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
 from app.database.models import async_session, Apartment
 from sqlalchemy.future import select
 
-main = InlineKeyboardMarkup(
+start = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Орендувати квартиру 🏠", callback_data="rent")],
         [InlineKeyboardButton(text="Купити квартиру 💵", callback_data="buy")],
         [InlineKeyboardButton(text="Здати/Продати квартиру 💸", callback_data="submit")],
     ], input_field_placeholder="Зрозумів тебе"
-)   
+)  
+
+main = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="Змінити параметри пошуку"), 
+        KeyboardButton(text="Налаштування / Допомога"),
+        KeyboardButton(text="Збережені")]
+    ],
+    resize_keyboard=True
+)
 
 async def get_rooms_keyboard(selected_rooms=None):
     if selected_rooms is None:
@@ -28,7 +37,7 @@ async def get_rooms_keyboard(selected_rooms=None):
             text += " ✅"
         buttons.append([InlineKeyboardButton(text=text, callback_data=f"room_{room}")])
     
-    buttons.append([InlineKeyboardButton(text="Done", callback_data="rooms_done")])
+    buttons.append([InlineKeyboardButton(text="Готово ✅", callback_data="rooms_done")])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     
@@ -45,13 +54,25 @@ async def get_regions_keyboard(selected_regions=None):
         regions = result.scalars().all()
     
     buttons = []
-    for region in regions:
+    row = []
+    for index, region in enumerate(regions):
         text = f"Region {region}"
         if region in selected_regions:
             text += " ✅"
-        buttons.append([InlineKeyboardButton(text=text, callback_data=f"region_{region}")])
-    
-    buttons.append([InlineKeyboardButton(text="Done", callback_data="regions_done")])
+        
+        row.append(InlineKeyboardButton(text=text, callback_data=f"region_{region}"))
+        
+        # Якщо в рядку вже дві кнопки, додаємо його до buttons і починаємо новий рядок
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+
+    # Додаємо залишкові кнопки, якщо вони є
+    if row:
+        buttons.append(row)
+
+    # Додаємо кнопку "Готово ✅" в окремий рядок
+    buttons.append([InlineKeyboardButton(text="Готово ✅", callback_data="regions_done")])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     

@@ -26,7 +26,6 @@ class Apartment(Base):
     address: Mapped[str] = mapped_column(String(125), nullable=True)
     region: Mapped[str] = mapped_column(String(125), nullable=True)
     price: Mapped[str] = mapped_column(String(125), nullable=True)
-    price_category: Mapped[str] = mapped_column(String(25), nullable=True)
     number_of_rooms: Mapped[int] = mapped_column(nullable=True)
     article: Mapped[str] = mapped_column(String(225), nullable=True)
     floor: Mapped[int] = mapped_column(nullable=True)

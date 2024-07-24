@@ -29,7 +29,6 @@ async def set_apartments(df):
                     address=row['Адреса'],
                     region=row['Регіон'],
                     price=row['Ціна'],
-                    price_category=row['Цінова категорія'],
                     number_of_rooms=row[' Кількість кімнат'],
                     article=row['Посилання на статтю'],
                     floor=row['Поверх'] if pd.notnull(row['Поверх']) else None,
@@ -42,7 +41,6 @@ async def set_apartments(df):
                 apartment.area = row['Площа']
                 apartment.region = row['Регіон']
                 apartment.price = row['Ціна']
-                apartment.price_category = row['Цінова категорія']
                 apartment.number_of_rooms = row[' Кількість кімнат']
                 apartment.article = row['Посилання на статтю']
                 apartment.floor = row['Поверх'] if pd.notnull(row['Поверх']) else None

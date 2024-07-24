@@ -17,11 +17,12 @@ from data import get_data
 
 router = Router()
 
+@router.message(F.text == "Змінити параметри пошуку")
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     user = message.from_user
     await rq.set_user(user.id, user.first_name, user.last_name, user.username)
-    await message.answer(f'{user.username}, ти хочеш...', reply_markup=kb.main)
+    await message.answer(f'{user.username}, ти хочеш...', reply_markup=kb.start)
 
 
 @router.callback_query(F.data == "rent")
@@ -148,7 +149,7 @@ async def save_apartment(callback: CallbackQuery, state: FSMContext):
 async def saved_apartment(callback: CallbackQuery, state: FSMContext):
     await callback.answer(text='Ви вже зберегли цю квартиру')
 
-
+@router.message(F.text == "Збережені")
 @router.message(Command("show_saved"))
 async def view_saved_apartments(message: Message, state: FSMContext):
     user_id = message.from_user.id
@@ -184,7 +185,8 @@ async def search_results(message: Message, state: FSMContext):
         apartments = result.scalars().all()
 
     if not apartments:
-        await message.answer("Квартири не знайдено, що відповідають вашим критеріям.")
+        await message.answer("На жаль, у нас нічого немає для тебе. Можливо, спробуй пізніше. \n Ти завжди можеш змінити параметри пошуку за допомогою кнопки знизу ⬇️",
+                             reply_markup=kb.main)
         await state.clear()
         return
 
@@ -207,7 +209,7 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"Стаття: {apartment.article}\n"
         f"Поверх: {apartment.floor}\n"
         f"Метро: {apartment.metro}\n"
-        f"Додаткова інформація: {apartment.additional_info}"
+        f"{apartment.additional_info}"
     )
 
 
@@ -222,7 +224,7 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         except TelegramBadRequest:
             await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(False))
 
-
+@router.message(F.text == "Налаштування / Допомога")
 @router.message(Command("help"))
 async def cmd_start(message: Message):
     await message.answer('Hepl!')
