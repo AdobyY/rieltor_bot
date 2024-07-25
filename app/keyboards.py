@@ -32,7 +32,7 @@ async def get_rooms_keyboard(selected_rooms=None):
     
     buttons = []
     for room in room_numbers:
-        text = f"Room {room}"
+        text = f"{room}"
         if str(room) in selected_rooms:
             text += " ✅"
         buttons.append([InlineKeyboardButton(text=text, callback_data=f"room_{room}")])
@@ -52,31 +52,27 @@ async def get_regions_keyboard(selected_regions=None):
         stmt = select(Apartment.region).distinct()
         result = await session.execute(stmt)
         regions = result.scalars().all()
-    
-    buttons = []
-    row = []
-    for index, region in enumerate(regions):
-        text = f"Region {region}"
-        if region in selected_regions:
-            text += " ✅"
-        
-        row.append(InlineKeyboardButton(text=text, callback_data=f"region_{region}"))
-        
-        # Якщо в рядку вже дві кнопки, додаємо його до buttons і починаємо новий рядок
-        if len(row) == 2:
-            buttons.append(row)
-            row = []
 
-    # Додаємо залишкові кнопки, якщо вони є
-    if row:
-        buttons.append(row)
+    keyboard = []
 
-    # Додаємо кнопку "Готово ✅" в окремий рядок
-    buttons.append([InlineKeyboardButton(text="Готово ✅", callback_data="regions_done")])
+    for i in range(0, len(regions), 2):
+        buttons = [
+            InlineKeyboardButton(
+                text=f"{region} {'✅' if region in selected_regions else ''}",
+                callback_data=f"region_{region}"
+            ) for region in regions[i:i + 2]
+        ]
+        keyboard.append(buttons)
     
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    select_all_button = InlineKeyboardButton(text="Обрати все", callback_data="select_all_regions")
+    deselect_all_button = InlineKeyboardButton(text="Обрати нічого", callback_data="deselect_all_regions")
+    next_button = InlineKeyboardButton(text="Далі", callback_data="regions_done")
     
-    return keyboard
+    keyboard.append([select_all_button, deselect_all_button])
+    keyboard.append([next_button])
+    
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 
 async def get_prev_next_keyboard(saved=True):
     keyboard = InlineKeyboardMarkup(

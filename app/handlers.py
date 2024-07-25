@@ -67,11 +67,59 @@ async def select_region(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_reply_markup(reply_markup=await kb.get_regions_keyboard(selected_regions))
     await callback.answer()
 
+@router.callback_query(F.data.startswith("region_"))
+async def select_region(callback: CallbackQuery, state: FSMContext):
+    region = callback.data.split("_")[1]
+    data = await state.get_data()
+    selected_regions = data.get("selected_regions", set())
+    
+    if region in selected_regions:
+        selected_regions.remove(region)
+    else:
+        selected_regions.add(region)
+    
+    await state.update_data(selected_regions=selected_regions)
+    await callback.message.edit_reply_markup(reply_markup=await kb.get_regions_keyboard(selected_regions))
+    await callback.answer()
+
+@router.callback_query(F.data == "select_all_regions")
+async def select_all_regions(callback: CallbackQuery, state: FSMContext):
+    async with async_session() as session:
+        stmt = select(Apartment.region).distinct()
+        result = await session.execute(stmt)
+        regions = result.scalars().all()
+        
+    all_regions = set(regions)
+    current_data = await state.get_data()
+    selected_regions = current_data.get('selected_regions', set())
+    
+    if selected_regions != all_regions:
+        await state.update_data(selected_regions=all_regions)
+        new_markup = await kb.get_regions_keyboard(all_regions)
+        await callback.message.edit_reply_markup(reply_markup=new_markup)
+        
+    await callback.answer()
+
+
+@router.callback_query(F.data == "deselect_all_regions")
+async def deselect_all_regions(callback: CallbackQuery, state: FSMContext):
+    current_data = await state.get_data()
+    selected_regions = current_data.get('selected_regions', set())
+
+    if selected_regions:
+        await state.update_data(selected_regions=set())
+        new_markup = await kb.get_regions_keyboard(set())
+        await callback.message.edit_reply_markup(reply_markup=new_markup)
+    await callback.answer()
+
+
+
 @router.callback_query(F.data == "regions_done")
 async def regions_done(callback: CallbackQuery, state: FSMContext):
     await state.set_state(RentFlow.price)
     await callback.message.answer("Яку суму ви бажаєте витратити? Наприклад: 1000-2000")
     await callback.answer()
+
 
 @router.message(RentFlow.price)
 async def rent_price(message: Message, state: FSMContext):
