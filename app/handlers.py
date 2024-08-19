@@ -52,20 +52,6 @@ async def rooms_done(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer("В якому регіоні ви шукаєте квартиру?", reply_markup=await kb.get_regions_keyboard())
     await callback.answer()
 
-@router.callback_query(F.data.startswith("region_"))
-async def select_region(callback: CallbackQuery, state: FSMContext):
-    region = callback.data.split("_")[1]
-    data = await state.get_data()
-    selected_regions = data.get("selected_regions", set())
-    
-    if region in selected_regions:
-        selected_regions.remove(region)
-    else:
-        selected_regions.add(region)
-    
-    await state.update_data(selected_regions=selected_regions)
-    await callback.message.edit_reply_markup(reply_markup=await kb.get_regions_keyboard(selected_regions))
-    await callback.answer()
 
 @router.callback_query(F.data.startswith("region_"))
 async def select_region(callback: CallbackQuery, state: FSMContext):
