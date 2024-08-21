@@ -147,14 +147,14 @@ async def next_apartment(callback: CallbackQuery, state: FSMContext):
         await send_apartment_message(callback, apartments, new_index)
     await callback.answer()
 
-@router.callback_query(F.data == "save")
-async def save_apartment(callback: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.in_({"save", "saved"}))
+async def handle_apartment(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     apartments = data.get("apartments", [])
     current_index = data.get("current_index", 0)
     apartment = apartments[current_index]
-
-    # Збереження інформації про квартиру в базі
+    action = callback.data  # "save" або "saved"
+    
     async with async_session() as session:
         async with session.begin():
             user_id = callback.from_user.id
@@ -165,24 +165,24 @@ async def save_apartment(callback: CallbackQuery, state: FSMContext):
             result = await session.execute(stmt)
             saved_apartment = result.scalars().first()
 
-            if not saved_apartment:
+            if action == "save":
                 new_saved_apartment = SavedApartment(
                     user_id=user_id,
                     apartment_id=apartment.id
                 )
                 session.add(new_saved_apartment)
                 await session.commit()
-                
-                await send_apartment_message(callback, apartments, current_index)  # Виклик для оновлення повідомлення
+
+                await send_apartment_message(callback, apartments, current_index)  # Оновлення повідомлення
                 await callback.answer(text='Збережено')
-            else:
-                await callback.answer(text='Цю квартиру вже збережено')
 
+            elif action == "saved":
+                await session.delete(saved_apartment)
+                await session.commit()
 
+                await send_apartment_message(callback, apartments, current_index)  # Оновлення повідомлення
+                await callback.answer(text='Вилучено з збережених')
 
-@router.callback_query(F.data == "saved")
-async def saved_apartment(callback: CallbackQuery, state: FSMContext):
-    await callback.answer(text='Ви вже зберегли цю квартиру')
 
 @router.message(F.text == "Збережені")
 @router.message(Command("show_saved"))
@@ -200,8 +200,6 @@ async def view_saved_apartments(message: Message, state: FSMContext):
 
     await state.update_data(apartments=saved_apartments, current_index=0)
     await send_apartment_message(message, saved_apartments, 0)
-
-
 
 
 async def search_results(message: Message, state: FSMContext):
@@ -232,12 +230,11 @@ async def search_results(message: Message, state: FSMContext):
     await send_apartment_message(message, apartments, 0)
 
 
-
 async def send_apartment_message(entity: Union[Message, CallbackQuery], apartments: list, index: int):
     apartment = apartments[index]
     total_count = len(apartments)
     result_text = (
-        f"<b>Результат {index + 1}/{total_count}</b>\n\n"
+        f"<b>Результат</b> {index + 1}/{total_count}\n\n"
         f"Адреса: {apartment.address}\n"
         f"Ціна: {apartment.price}\n"
         f"Регіон: {apartment.region}\n"
@@ -245,10 +242,9 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"Стаття: {apartment.article}\n"
         f"Поверх: {apartment.floor}\n"
         f"Метро: {apartment.metro}\n"
-        "" if apartment.additional_info == None else f"❕{apartment.additional_info}"
+        f"{'' if apartment.additional_info is None else f'❕{apartment.additional_info}'}"
     )
 
-    # Перевірка, чи квартира вже збережена
     user_id = entity.from_user.id if isinstance(entity, Message) else entity.message.chat.id
     async with async_session() as session:
         stmt = select(SavedApartment).where(
@@ -260,14 +256,14 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
 
     if isinstance(entity, Message):
         try:
-            await entity.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved))
+            await entity.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
         except TelegramBadRequest:
-            await entity.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved))
+            await entity.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
     elif isinstance(entity, CallbackQuery):
         try:
-            await entity.message.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved))
+            await entity.message.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
         except TelegramBadRequest:
-            await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved))
+            await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
 
 
 @router.message(F.text == "Налаштування / Допомога")
