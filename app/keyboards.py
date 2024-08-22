@@ -18,12 +18,13 @@ back = InlineKeyboardMarkup(
 
 main = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="Змінити параметри пошуку")], 
-        [KeyboardButton(text="Налаштування / Допомога")],
-        [KeyboardButton(text="Збережені")]
+        [KeyboardButton(text="Змінити параметри пошуку 🔄")], 
+        [KeyboardButton(text="Допомога 🆘")],
+        [KeyboardButton(text="Збережені 🌟")]
     ],
     resize_keyboard=True
 )
+
 
 async def get_rooms_keyboard(selected_rooms=None):
     if selected_rooms is None:
@@ -41,7 +42,7 @@ async def get_rooms_keyboard(selected_rooms=None):
             text += " ✅"
         buttons.append([InlineKeyboardButton(text=text, callback_data=f"room_{room}")])
     
-    buttons.append([InlineKeyboardButton(text="Готово ✅", callback_data="rooms_done")])
+    buttons.append([InlineKeyboardButton(text="Далі ✅", callback_data="rooms_done")])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     

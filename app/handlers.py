@@ -18,7 +18,7 @@ router = Router()
 
 global user;
 
-@router.message(F.text == "Змінити параметри пошуку")
+@router.message(F.text == "Змінити параметри пошуку 🔄")
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     user = message.from_user
@@ -205,7 +205,7 @@ async def handle_apartment(callback: CallbackQuery, state: FSMContext):
                 await callback.answer(text='Вилучено з збережених')
 
 
-@router.message(F.text == "Збережені")
+@router.message(F.text == "Збережені 🌟")
 @router.message(Command("show_saved"))
 async def view_saved_apartments(message: Message, state: FSMContext):
     user_id = message.from_user.id
@@ -262,7 +262,7 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"🏘Кількість кімнат: {apartment.number_of_rooms}\n"
         f"🔺Поверх: {apartment.floor}\n"
         f"〽️Метро: {apartment.metro}\n"
-        f"{'' if apartment.additional_info is None else f'❕{apartment.additional_info}'}"
+        f"{'' if apartment.additional_info is None else f'❕{apartment.additional_info}'}\n"
         f'⚡️<a href="{apartment.article}">Стаття</a>\n'
     )
 
@@ -287,12 +287,12 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
             await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
 
 
-@router.message(F.text == "Налаштування / Допомога")
+@router.message(F.text == "Допомога 🆘")
 @router.message(Command("help"))
 async def cmd_start(message: Message):
-    await message.answer('Hepl!')
-    await message.reply('hepl')
+    await message.answer('Якщо є питання, пиши нашим менеджерам {manager.username}', reply_markup=kb.main)
 
+@router.message(F.text == "оновити")
 @router.message(Command("update_data"))
 async def update_data(message: Message):
     data = get_data()
