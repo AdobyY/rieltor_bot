@@ -14,22 +14,41 @@ from sqlalchemy.future import select
 
 from data import get_data
 
-
 router = Router()
+
+global user;
 
 @router.message(F.text == "Змінити параметри пошуку")
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     user = message.from_user
     await rq.set_user(user.id, user.first_name, user.last_name, user.username)
-    await message.answer(f'{user.username}, ти хочеш...', reply_markup=kb.start)
+    await message.answer(f'Отже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
 
 
+# Орендуємо і купуємо квартиру, поки дві кнопки виконують одне і теж
 @router.callback_query(F.data == "rent")
+@router.callback_query(F.data == "buy")
 async def rent(callback: CallbackQuery, state: FSMContext):
     await state.set_state(RentFlow.number_of_rooms)
     await callback.message.answer("Скільки кімнат у квартирі?", reply_markup=await kb.get_rooms_keyboard())
     await callback.answer()
+
+
+# Здаємо квартиру
+@router.callback_query(F.data == "sell")
+async def sell(callback: CallbackQuery):
+    await callback.message.answer("Напишіть нашому менеджеру \nmanager.username \nТам ви зможете розмістити свою квартиру у нашому боті!", reply_markup=kb.back)
+
+
+@router.callback_query(F.data == "back")
+async def cmd_start(callback: CallbackQuery):
+    user = callback.from_user 
+    username = user.first_name or user.username 
+
+    await callback.message.answer(f'Отже, {username}, ти хочеш...', reply_markup=kb.start)
+    await callback.answer()
+
 
 @router.callback_query(F.data.startswith("room_"))
 async def select_room(callback: CallbackQuery, state: FSMContext):
@@ -45,6 +64,7 @@ async def select_room(callback: CallbackQuery, state: FSMContext):
     await state.update_data(selected_rooms=selected_rooms)
     await callback.message.edit_reply_markup(reply_markup=await kb.get_rooms_keyboard(selected_rooms))
     await callback.answer()
+
 
 @router.callback_query(F.data == "rooms_done")
 async def rooms_done(callback: CallbackQuery, state: FSMContext):
@@ -67,6 +87,7 @@ async def select_region(callback: CallbackQuery, state: FSMContext):
     await state.update_data(selected_regions=selected_regions)
     await callback.message.edit_reply_markup(reply_markup=await kb.get_regions_keyboard(selected_regions))
     await callback.answer()
+
 
 @router.callback_query(F.data == "select_all_regions")
 async def select_all_regions(callback: CallbackQuery, state: FSMContext):
@@ -235,14 +256,14 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
     total_count = len(apartments)
     result_text = (
         f"<b>Результат</b> {index + 1}/{total_count}\n\n"
-        f"Адреса: {apartment.address}\n"
-        f"Ціна: {apartment.price}\n"
-        f"Регіон: {apartment.region}\n"
-        f"Кількість кімнат: {apartment.number_of_rooms}\n"
-        f"Стаття: {apartment.article}\n"
-        f"Поверх: {apartment.floor}\n"
-        f"Метро: {apartment.metro}\n"
+        f"📍Адреса: {apartment.address}\n"
+        f"💵Ціна: {apartment.price}$\n"
+        f"🌄Регіон: {apartment.region}\n"
+        f"🏘Кількість кімнат: {apartment.number_of_rooms}\n"
+        f"🔺Поверх: {apartment.floor}\n"
+        f"〽️Метро: {apartment.metro}\n"
         f"{'' if apartment.additional_info is None else f'❕{apartment.additional_info}'}"
+        f'⚡️<a href="{apartment.article}">Стаття</a>\n'
     )
 
     user_id = entity.from_user.id if isinstance(entity, Message) else entity.message.chat.id

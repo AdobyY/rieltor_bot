@@ -8,8 +8,12 @@ start = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Орендувати квартиру 🏠", callback_data="rent")],
         [InlineKeyboardButton(text="Купити квартиру 💵", callback_data="buy")],
-        [InlineKeyboardButton(text="Здати/Продати квартиру 💸", callback_data="submit")],
-    ], input_field_placeholder="Зрозумів тебе"
+        [InlineKeyboardButton(text="Здати/Продати квартиру 💸", callback_data="sell")],
+    ], input_field_placeholder="Вибери щосьь.."
+)  
+
+back = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text="◀️ Повернутися назад", callback_data="back")]]
 )  
 
 main = ReplyKeyboardMarkup(
