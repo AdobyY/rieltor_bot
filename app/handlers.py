@@ -1,6 +1,6 @@
 from typing import Union
 from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, Command
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -16,14 +16,17 @@ from data import get_data
 
 router = Router()
 
-global user;
+manager = '@W_oland'
+
+@router.message(CommandStart())
+async def start(message: Message):
+    await message.answer(f'Привіт, давай я допоможу тобі вибрати квартиру мрії!\nВибери те, що тобі потрібно!', reply_markup=kb.start)
 
 @router.message(F.text == "Змінити параметри пошуку 🔄")
-@router.message(CommandStart())
-async def cmd_start(message: Message):
+async def change(message: Message):
     user = message.from_user
     await rq.set_user(user.id, user.first_name, user.last_name, user.username)
-    await message.answer(f'Отже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
+    await message.answer(f'Гаразд, давай щось змінимо.\nОтже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
 
 
 # Орендуємо і купуємо квартиру, поки дві кнопки виконують одне і теж
@@ -39,6 +42,7 @@ async def rent(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "sell")
 async def sell(callback: CallbackQuery):
     await callback.message.answer("Напишіть нашому менеджеру \nmanager.username \nТам ви зможете розмістити свою квартиру у нашому боті!", reply_markup=kb.back)
+    await callback.answer()
 
 
 @router.callback_query(F.data == "back")
@@ -216,9 +220,10 @@ async def view_saved_apartments(message: Message, state: FSMContext):
         saved_apartments = result.scalars().all()
 
     if not saved_apartments:
-        await message.answer("Ви не зберегли жодної квартири.")
+        await message.answer("Ви ще не зберегли жодної квартири.\n Потрібно це виправити якнайшвидше!!")
         return
 
+    await message.answer("<b>Ось ваші збереження:</b>", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
     await state.update_data(apartments=saved_apartments, current_index=0)
     await send_apartment_message(message, saved_apartments, 0)
 
@@ -247,7 +252,6 @@ async def search_results(message: Message, state: FSMContext):
 
     await state.update_data(apartments=apartments, current_index=0)
 
-    # Надсилання першого повідомлення
     await send_apartment_message(message, apartments, 0)
 
 
@@ -290,7 +294,7 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
 @router.message(F.text == "Допомога 🆘")
 @router.message(Command("help"))
 async def cmd_start(message: Message):
-    await message.answer('Якщо є питання, пиши нашим менеджерам {manager.username}', reply_markup=kb.main)
+    await message.answer(f'Якщо є питання, пиши нашому менеджеру {manager}!', reply_markup=kb.main)
 
 @router.message(F.text == "оновити")
 @router.message(Command("update_data"))

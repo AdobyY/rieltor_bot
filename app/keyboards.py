@@ -18,9 +18,9 @@ back = InlineKeyboardMarkup(
 
 main = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="Змінити параметри пошуку 🔄")], 
-        [KeyboardButton(text="Допомога 🆘")],
-        [KeyboardButton(text="Збережені 🌟")]
+        [KeyboardButton(text="Змінити параметри пошуку 🔄")],
+        [KeyboardButton(text="Збережені 🌟")],
+        [KeyboardButton(text="Допомога 🆘")]
     ],
     resize_keyboard=True
 )
@@ -42,11 +42,13 @@ async def get_rooms_keyboard(selected_rooms=None):
             text += " ✅"
         buttons.append([InlineKeyboardButton(text=text, callback_data=f"room_{room}")])
     
-    buttons.append([InlineKeyboardButton(text="Далі ✅", callback_data="rooms_done")])
+    if selected_rooms:
+        buttons.append([InlineKeyboardButton(text="Далі ✅", callback_data="rooms_done")])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     
     return keyboard
+
 
 
 async def get_regions_keyboard(selected_regions=None):
@@ -71,12 +73,17 @@ async def get_regions_keyboard(selected_regions=None):
     
     select_all_button = InlineKeyboardButton(text="Обрати все", callback_data="select_all_regions")
     deselect_all_button = InlineKeyboardButton(text="Обрати нічого", callback_data="deselect_all_regions")
-    next_button = InlineKeyboardButton(text="Далі", callback_data="regions_done")
     
+    # Add select all and deselect all buttons in one row
     keyboard.append([select_all_button, deselect_all_button])
-    keyboard.append([next_button])
+    
+    # Add the "Далі" button on a separate row if at least one region is selected
+    if selected_regions:
+        next_button = InlineKeyboardButton(text="Далі ✅", callback_data="regions_done")
+        keyboard.append([next_button])
     
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 
 
 async def get_prev_next_keyboard(saved=True):
