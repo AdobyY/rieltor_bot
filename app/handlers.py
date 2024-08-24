@@ -13,6 +13,7 @@ from app.states import RentFlow
 from sqlalchemy.future import select
 
 from data import get_data
+from notify_managers import notify_managers
 
 router = Router()
 
@@ -289,6 +290,45 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
             await entity.message.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
         except TelegramBadRequest:
             await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
+
+
+@router.callback_query(F.data == "schedule_viewing")
+async def schedule_viewing(callback: CallbackQuery, state: FSMContext):
+    # Extract apartment ID from the callback data
+    apartment_id = int(callback.data.split('_')[1])
+    
+    # Save the apartment ID in the state
+    await state.update_data(apartment_id=apartment_id)
+    
+    # Set the state to wait for confirmation
+    await state.set_state("waiting_for_confirmation")
+    
+    # Send confirmation message
+    await callback.message.answer(
+        "Ви дійсно бажаєте записатися на перегляд цієї квартири?\n\n"
+        "Виберіть один з варіантів:",
+        reply_markup=kb.confirmation  # Ensure kb.confirmation is defined in your kb module
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "confirm_viewing")
+async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    data = await state.get_data()
+    apartment_id = data.get('apartment_id')
+    
+    # Notify managers about the scheduling
+    await notify_managers(apartment_id, user_id)
+    
+    # Send confirmation message to the user
+    await callback.message.answer("Ваш запит на перегляд квартири був надісланий менеджерам.")
+    await state.finish()
+
+@router.callback_query(F.data == "cancel_viewing")
+async def cancel_viewing(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer("Запис на перегляд скасовано.")
+    await state.finish()
 
 
 @router.message(F.text == "Допомога 🆘")

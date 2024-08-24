@@ -6,3 +6,4 @@ class RentFlow(StatesGroup):
     price = State()
     confirm = State()
     results = State()
+    waiting_for_confirmation = State()
