@@ -9,11 +9,11 @@ import app.keyboards as kb
 import app.database.requests as rq
 from app.database.models import async_session, Apartment, SavedApartment
 from app.states import RentFlow
+from app.notify_managers import notify_managers
 
 from sqlalchemy.future import select
 
 from data import get_data
-from notify_managers import notify_managers
 
 router = Router()
 
@@ -282,20 +282,27 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
 
     if isinstance(entity, Message):
         try:
-            await entity.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
+            await entity.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved, apartment_id=apartment.id), parse_mode="HTML")
         except TelegramBadRequest:
-            await entity.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
+            await entity.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved, apartment_id=apartment.id), parse_mode="HTML")
     elif isinstance(entity, CallbackQuery):
         try:
-            await entity.message.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
+            await entity.message.edit_text(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved, apartment_id=apartment.id), parse_mode="HTML")
         except TelegramBadRequest:
-            await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved), parse_mode="HTML")
+            await entity.message.answer(result_text, reply_markup=await kb.get_prev_next_keyboard(saved=is_saved, apartment_id=apartment.id), parse_mode="HTML")
 
 
-@router.callback_query(F.data == "schedule_viewing")
+@router.callback_query(F.data.startswith("schedule_viewing"))
 async def schedule_viewing(callback: CallbackQuery, state: FSMContext):
     # Extract apartment ID from the callback data
-    apartment_id = int(callback.data.split('_')[1])
+    apartment_id = callback.data.split('_')[2]  # Assuming the ID is the last part after the last '_'
+    print(apartment_id)
+    # Convert apartment_id to integer if necessary
+    try:
+        apartment_id = int(apartment_id)
+    except ValueError:
+        await callback.answer("Невірний формат ID квартири.")
+        return
     
     # Save the apartment ID in the state
     await state.update_data(apartment_id=apartment_id)
@@ -312,6 +319,7 @@ async def schedule_viewing(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+
 @router.callback_query(F.data == "confirm_viewing")
 async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
@@ -323,12 +331,14 @@ async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
     
     # Send confirmation message to the user
     await callback.message.answer("Ваш запит на перегляд квартири був надісланий менеджерам.")
-    await state.finish()
+    await state.clear()
+    await callback.answer()
 
 @router.callback_query(F.data == "cancel_viewing")
 async def cancel_viewing(callback: CallbackQuery, state: FSMContext):
-    await callback.message.answer("Запис на перегляд скасовано.")
-    await state.finish()
+    await callback.message.answer("Запис на перегляд скасовано.", reply_markup=kb.main)
+    await state.clear()
+    await callback.answer()
 
 
 @router.message(F.text == "Допомога 🆘")

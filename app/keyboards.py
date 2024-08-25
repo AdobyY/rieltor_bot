@@ -86,16 +86,17 @@ async def get_regions_keyboard(selected_regions=None):
 
 
 
-async def get_prev_next_keyboard(saved=True):
+async def get_prev_next_keyboard(saved=True, apartment_id=None):
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(text="⬅️ Назад", callback_data="prev"),
-                InlineKeyboardButton(text="Збережено 🌟" if saved else "Зберегти", callback_data="save"),
+                InlineKeyboardButton(text="Збережено 🌟" if saved else "Зберегти", callback_data="saved" if saved else "save"),
+                
                 InlineKeyboardButton(text="Вперед ➡️", callback_data="next")
             ],
             [
-                InlineKeyboardButton(text="Записатися на перегляд", callback_data="schedule_viewing")
+                InlineKeyboardButton(text="Записатися на перегляд", callback_data=f"schedule_viewing_{apartment_id}")
             ]
         ]
     )
