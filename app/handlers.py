@@ -1,27 +1,50 @@
 from typing import Union
 from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputFile, FSInputFile
 from aiogram.filters import CommandStart, Command
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 
+import pandas as pd
+
+import os
+
 import app.keyboards as kb
 import app.database.requests as rq
-from app.database.models import async_session, Apartment, SavedApartment
+from app.database.models import async_session, Apartment, SavedApartment, User
 from app.states import RentFlow
 from app.notify_managers import notify_managers
+from app.constants import *
 
 from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from data import get_data
 
 router = Router()
 
-manager = '@W_oland'
 
 @router.message(CommandStart())
 async def start(message: Message):
-    await message.answer(f'Привіт, давай я допоможу тобі вибрати квартиру мрії!\nВибери те, що тобі потрібно!', reply_markup=kb.start)
+    user_id = message.from_user.id
+    
+    if user_id in MANAGERS:
+        msg = await message.answer(
+            f"""Привіт, менеджере! Тут ти можеш переглянути нові заявки на перегляди квартир.
+            
+<b>Ось команди, які тобі знадобляться:</b>
+/update_data - щоб синхронізувати дані з ексель листом, якщо ти вніс туди зміни
+/get_data - щоб отримати поточний стан користувачів
+            
+Як виникнуть якісь питання, звертайся до розробника: {DEVELOPER}""", parse_mode="HTML"
+        )
+        # Закріплення повідомлення для менеджера
+        await msg.pin()
+    else:
+        await message.answer(
+            "Привіт, давай я допоможу тобі вибрати квартиру мрії!\nВибери те, що тобі потрібно!",
+            reply_markup=kb.start  # Клавіатура для звичайних користувачів
+        )
 
 @router.message(F.text == "Змінити параметри пошуку 🔄")
 async def change(message: Message):
@@ -344,7 +367,7 @@ async def cancel_viewing(callback: CallbackQuery, state: FSMContext):
 @router.message(F.text == "Допомога 🆘")
 @router.message(Command("help"))
 async def cmd_start(message: Message):
-    await message.answer(f'Якщо є питання, пиши нашому менеджеру {manager}!', reply_markup=kb.main)
+    await message.answer(f'Якщо є питання, пиши нашому менеджеру {MANAGER_USERNAME}!', reply_markup=kb.main)
 
 @router.message(F.text == "оновити")
 @router.message(Command("update_data"))
@@ -354,5 +377,39 @@ async def update_data(message: Message):
     await message.answer("Дякую! Дані оновлено")
     await message.answer(data.to_string())
 
+
+@router.message(Command("get_data"))
+async def get_data(message: Message):
+    user_id = message.from_user.id
+    
+    # Перевірка, чи є користувач менеджером
+    if user_id not in MANAGERS:
+        await message.answer("У вас немає прав для отримання цих даних.")
+        return
+    
+    # Отримання даних з бази та створення ексель файлу
+    excel_file_path = os.path.join(os.getcwd(), "database_data.xlsx")
+    async with async_session() as session:
+        with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
+            await save_table_to_excel(session, writer, Apartment, "Apartments")
+            await save_table_to_excel(session, writer, User, "Users")
+            await save_table_to_excel(session, writer, SavedApartment, "SavedApartments")
+    # Відправка ексель файла менеджеру
+    try:
+        # Send the file directly using the file path
+        await message.answer_document(
+            document=FSInputFile(path="database_data.xlsx"),
+            caption="Ось дані бази у форматі Excel."
+            )
+    except Exception as e:
+        await message.answer(f"Помилка при відправці файлу: {str(e)}")
+
+
+async def save_table_to_excel(session: AsyncSession, writer: pd.ExcelWriter, model, sheet_name: str):
+    """Отримує всі записи з вказаної таблиці та зберігає їх в ексель файл."""
+    stmt = select(model)
+    result = await session.execute(stmt)
+    df = pd.DataFrame([row.__dict__ for row in result.scalars().all()])
+    df.to_excel(writer, sheet_name=sheet_name, index=False)
 
     

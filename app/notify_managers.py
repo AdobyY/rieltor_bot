@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 from app.database.models import Apartment
 from app.database.models import async_session
+from app.constants import *
+
 
 load_dotenv()  # Load environment variables from a .env file
 
@@ -41,10 +43,7 @@ async def notify_managers(apartment_id: int, user_id: int):
             f'⚡️<a href="{apartment.article}">Стаття</a>\n'
         )
 
-        # Manager IDs
-        manager_ids = [625856657, 6484931242]  # Replace with actual manager IDs
-
-        for manager_id in manager_ids:
+        for manager_id in MANAGERS:
             try:
                 await bot.send_message(chat_id=manager_id, text=message_text, parse_mode="HTML")
             except Exception as e:
