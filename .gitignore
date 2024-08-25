@@ -114,3 +114,5 @@ data/
 
 # Pyright type checker
 .pyright/
+
+database_data.xlsx

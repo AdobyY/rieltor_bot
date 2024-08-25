@@ -1,6 +1,6 @@
 from typing import Union
 from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputFile, FSInputFile
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, FSInputFile, ReplyKeyboardMarkup, KeyboardButton, ContentType
 from aiogram.filters import CommandStart, Command
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -30,12 +30,17 @@ async def start(message: Message):
     
     if user_id in MANAGERS:
         msg = await message.answer(
-            f"""Привіт, менеджере! Тут ти можеш переглянути нові заявки на перегляди квартир.
+            f"""Привіт, {message.from_user.first_name}! 
+Я тебе знаю, ти є менеджером, отже у тебе є додаткові права!
+Тут ти можеш переглянути нові заявки на перегляди квартир.
             
 <b>Ось команди, які тобі знадобляться:</b>
+
 /update_data - щоб синхронізувати дані з ексель листом, якщо ти вніс туди зміни
+
 /get_data - щоб отримати поточний стан користувачів
             
+
 Як виникнуть якісь питання, звертайся до розробника: {DEVELOPER}""", parse_mode="HTML"
         )
         # Закріплення повідомлення для менеджера
@@ -46,6 +51,7 @@ async def start(message: Message):
             reply_markup=kb.start  # Клавіатура для звичайних користувачів
         )
 
+@router.message(Command("change_settings"))
 @router.message(F.text == "Змінити параметри пошуку 🔄")
 async def change(message: Message):
     user = message.from_user
@@ -244,7 +250,7 @@ async def view_saved_apartments(message: Message, state: FSMContext):
         saved_apartments = result.scalars().all()
 
     if not saved_apartments:
-        await message.answer("Ви ще не зберегли жодної квартири.\n Потрібно це виправити якнайшвидше!!")
+        await message.answer("Ви ще не зберегли жодної квартири.\n\n‼️Потрібно це виправити якнайшвидше‼️")
         return
 
     await message.answer("<b>Ось ваші збереження:</b>", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
@@ -337,7 +343,7 @@ async def schedule_viewing(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
         "Ви дійсно бажаєте записатися на перегляд цієї квартири?\n\n"
         "Виберіть один з варіантів:",
-        reply_markup=kb.confirmation  # Ensure kb.confirmation is defined in your kb module
+        reply_markup=kb.confirmation 
     )
     await callback.answer()
 
@@ -348,14 +354,36 @@ async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     data = await state.get_data()
     apartment_id = data.get('apartment_id')
+
+    # # Запит номера телефону у користувача
+    # keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    # button = KeyboardButton(text="Поділитися номером телефону", request_contact=True)
+    # keyboard.add(button)
+
+    await callback.message.answer(
+        "Будь ласка, надайте свій номер телефону для контакту з менеджером:",
+        reply_markup=kb.rq_contact
+    )
+    # Збереження apartment_id в стані
+    await state.update_data(apartment_id=apartment_id)
+    await state.set_state(RentFlow.phone_number)  # Перехід до наступного стану
     
-    # Notify managers about the scheduling
-    await notify_managers(apartment_id, user_id)
-    
-    # Send confirmation message to the user
-    await callback.message.answer("Ваш запит на перегляд квартири був надісланий менеджерам.")
-    await state.clear()
     await callback.answer()
+
+@router.message(RentFlow.phone_number)
+async def process_phone_number(message: Message, state: FSMContext):
+    contact = message.contact
+    phone_number = contact.phone_number
+    data = await state.get_data()
+    apartment_id = data.get('apartment_id')
+
+    await notify_managers(apartment_id, message, phone_number)
+    
+    # Повідомлення користувачу про успішну відправку    
+    await message.answer("Дякуємо! \nМенеджер зв'яжеться з вами!", reply_markup=kb.main)
+
+    
+    await state.clear()
 
 @router.callback_query(F.data == "cancel_viewing")
 async def cancel_viewing(callback: CallbackQuery, state: FSMContext):
@@ -372,19 +400,25 @@ async def cmd_start(message: Message):
 @router.message(F.text == "оновити")
 @router.message(Command("update_data"))
 async def update_data(message: Message):
+    user_id = message.from_user.id
+
+    # Перевірка, чи є користувач менеджером
+    if user_id not in MANAGERS:
+        await message.answer("У вас немає прав для цього(")
+        return
+    
     data = get_data()
     await rq.set_apartments(data)
-    await message.answer("Дякую! Дані оновлено")
-    await message.answer(data.to_string())
+    await message.answer("‼️ Готово! Дані синхронізовано ‼️")
 
 
 @router.message(Command("get_data"))
-async def get_data(message: Message):
+async def get_user_data(message: Message):
     user_id = message.from_user.id
     
     # Перевірка, чи є користувач менеджером
     if user_id not in MANAGERS:
-        await message.answer("У вас немає прав для отримання цих даних.")
+        await message.answer("У вас немає прав для отримання цих даних(")
         return
     
     # Отримання даних з бази та створення ексель файлу
@@ -399,7 +433,7 @@ async def get_data(message: Message):
         # Send the file directly using the file path
         await message.answer_document(
             document=FSInputFile(path="database_data.xlsx"),
-            caption="Ось дані бази у форматі Excel."
+            caption="Ось теперішня база"
             )
     except Exception as e:
         await message.answer(f"Помилка при відправці файлу: {str(e)}")

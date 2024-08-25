@@ -23,4 +23,5 @@ six==1.16.0
 SQLAlchemy==2.0.32
 typing_extensions==4.12.2
 tzdata==2024.1
+XlsxWriter==3.2.0
 yarl==1.9.4

@@ -4,6 +4,8 @@ from aiogram import Bot
 from sqlalchemy.future import select
 from dotenv import load_dotenv
 
+from aiogram.types import Message
+
 from app.database.models import Apartment
 from app.database.models import async_session
 from app.constants import *
@@ -14,10 +16,9 @@ load_dotenv()  # Load environment variables from a .env file
 API_TOKEN = os.getenv('BOT_TOKEN')
 bot = Bot(token=API_TOKEN)
 
-async def notify_managers(apartment_id: int, user_id: int):
+async def notify_managers(apartment_id: int, message: Message, phone_number):
     async with async_session() as session:
         # Fetch apartment details
-        print(apartment_id)
         stmt = select(Apartment).where(Apartment.id == apartment_id)
         result = await session.execute(stmt)
         apartment = result.scalar_one_or_none()
@@ -28,11 +29,11 @@ async def notify_managers(apartment_id: int, user_id: int):
             return
 
         # Log the fetched apartment details
-        print(f"Found apartment: {apartment}")
+        # print(f"Found apartment: {apartment}")
 
         # Prepare the message
         message_text = (
-            f"Користувач (ID: {user_id}) вибрав квартиру:\n"
+            f"Користувач {message.from_user.full_name} (ID: {message.from_user.id}) \nЗ номером телефону: {phone_number}\nХоче записатись на перегляд квартири:\n\n"
             f"📍Адреса: {apartment.address}\n"
             f"💵Ціна: {apartment.price} грн\n"
             f"🌄Регіон: {apartment.region}\n"

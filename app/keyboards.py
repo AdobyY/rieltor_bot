@@ -108,3 +108,8 @@ confirmation = InlineKeyboardMarkup(
                 [InlineKeyboardButton(text="Ні, повернутися назад", callback_data="cancel_viewing")]
             ]
         )
+
+rq_contact = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text="Поділитися номером телефону 📞", request_contact=True)]],
+    resize_keyboard=True
+)
