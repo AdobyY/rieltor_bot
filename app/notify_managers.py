@@ -33,7 +33,7 @@ async def notify_managers(apartment_id: int, message: Message, phone_number):
 
         # Prepare the message
         message_text = (
-            f"Користувач {message.from_user.full_name} (ID: {message.from_user.id}) \nЗ номером телефону: {phone_number}\nХоче записатись на перегляд квартири:\n\n"
+            f"Користувач {message.from_user.full_name} (ID: {message.from_user.id}) \n{message.from_user.username}\nЗ номером телефону: {phone_number}\nХоче записатись на перегляд квартири:\n\n"
             f"📍Адреса: {apartment.address}\n"
             f"💵Ціна: {apartment.price} грн\n"
             f"🌄Регіон: {apartment.region}\n"

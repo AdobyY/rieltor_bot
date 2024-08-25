@@ -1,7 +1,7 @@
 import pandas as pd
 import re
+from app.constants import GOOGLE_SHEET_URL
 
-URL = 'https://docs.google.com/spreadsheets/d/1YJtt3NcdZwcGG91rlMqEV9L3zcPycaugfPUwNb8dMlc/edit?gid=0#gid=0'
 
 def convert_google_sheet_url(url):
     # Regular expression to match and capture the necessary part of the URL
@@ -17,6 +17,6 @@ def convert_google_sheet_url(url):
     return new_url
 
 def get_data():
-    url = convert_google_sheet_url(URL)
+    url = convert_google_sheet_url(GOOGLE_SHEET_URL)
     df = pd.read_csv(url)
     return(df)
