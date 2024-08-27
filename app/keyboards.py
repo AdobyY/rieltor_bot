@@ -4,17 +4,19 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
 from app.database.models import async_session, Apartment
 from sqlalchemy.future import select
 
+
 start = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text="Орендувати квартиру 🏠", callback_data="rent")],
-        [InlineKeyboardButton(text="Купити квартиру 💵", callback_data="buy")],
         [InlineKeyboardButton(text="Здати/Продати квартиру 💸", callback_data="sell")],
     ], input_field_placeholder="Вибери щосьь.."
 )  
 
+
 back = InlineKeyboardMarkup(
     inline_keyboard=[[InlineKeyboardButton(text="◀️ Повернутися назад", callback_data="back")]]
 )  
+
 
 main = ReplyKeyboardMarkup(
     keyboard=[
@@ -48,7 +50,6 @@ async def get_rooms_keyboard(selected_rooms=None):
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     
     return keyboard
-
 
 
 async def get_regions_keyboard(selected_regions=None):
@@ -85,7 +86,6 @@ async def get_regions_keyboard(selected_regions=None):
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-
 async def get_prev_next_keyboard(saved=True, apartment_id=None):
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -102,12 +102,14 @@ async def get_prev_next_keyboard(saved=True, apartment_id=None):
     )
     return keyboard
 
+
 confirmation = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text="Так, хочу", callback_data="confirm_viewing")],
                 [InlineKeyboardButton(text="Ні, повернутися назад", callback_data="cancel_viewing")]
             ]
         )
+
 
 rq_contact = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="Поділитися номером телефону 📞", request_contact=True)]],

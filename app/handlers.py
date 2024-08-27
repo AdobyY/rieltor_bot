@@ -1,36 +1,35 @@
 from typing import Union
 from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, FSInputFile, ReplyKeyboardMarkup, KeyboardButton, ContentType
-from aiogram.filters import CommandStart, Command
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import CommandStart, Command
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, FSInputFile, ReplyKeyboardMarkup, KeyboardButton, ContentType
 
-import pandas as pd
-
-import os
-
-import app.keyboards as kb
-import app.database.requests as rq
-from app.database.models import async_session, Apartment, SavedApartment, User
-from app.states import RentFlow
-from app.notify_managers import notify_managers
-from app.constants import *
 
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import app.keyboards as kb
+import app.database.requests as rq
+from app.constants import *
+from app.states import RentFlow
+from app.notify_managers import notify_managers
+from app.database.models import async_session, Apartment, SavedApartment, User
+
+import os
+import pandas as pd
 from data import get_data
 
 router = Router()
 
-
 @router.message(CommandStart())
 async def start(message: Message):
-    user_id = message.from_user.id
+    user = message.from_user
+    await rq.set_user(user.id, user.first_name, user.last_name, user.username)
     
-    if user_id in MANAGERS:
+    if user.id in MANAGERS:
         msg = await message.answer(
-            f"""Привіт, {message.from_user.first_name}! 
+            f"""Привіт, {user.first_name}! 
 Я тебе знаю, ти є менеджером, отже у тебе є додаткові права!
 Тут ти можеш переглянути нові заявки на перегляди квартир.
             
@@ -39,6 +38,8 @@ async def start(message: Message):
 /update_data - щоб синхронізувати дані з ексель листом, якщо ти вніс туди зміни
 
 /get_data - щоб отримати поточний стан користувачів
+
+Ексель лист, в який потрібно добавляти квартирки знаходиться <a href='{GOOGLE_SHEET_URL}'>туть!</a>
             
 
 Як виникнуть якісь питання, звертайся до розробника: {DEVELOPER}""", parse_mode="HTML"
@@ -54,17 +55,13 @@ async def start(message: Message):
 @router.message(Command("change_settings"))
 @router.message(F.text == "Змінити параметри пошуку 🔄")
 async def change(message: Message):
-    user = message.from_user
-    await rq.set_user(user.id, user.first_name, user.last_name, user.username)
     await message.answer(f'Гаразд, давай щось змінимо.\nОтже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
 
 
-# Орендуємо і купуємо квартиру, поки дві кнопки виконують одне і теж
 @router.callback_query(F.data == "rent")
-@router.callback_query(F.data == "buy")
 async def rent(callback: CallbackQuery, state: FSMContext):
     await state.set_state(RentFlow.number_of_rooms)
-    await callback.message.answer("Скільки кімнат у квартирі?", reply_markup=await kb.get_rooms_keyboard())
+    await callback.message.answer("Скільки кімнат повинно бути у квартирі?", reply_markup=await kb.get_rooms_keyboard())
     await callback.answer()
 
 
@@ -77,10 +74,9 @@ async def sell(callback: CallbackQuery):
 
 @router.callback_query(F.data == "back")
 async def cmd_start(callback: CallbackQuery):
-    user = callback.from_user 
-    username = user.first_name or user.username 
+    user = callback.from_user
 
-    await callback.message.answer(f'Отже, {username}, ти хочеш...', reply_markup=kb.start)
+    await callback.message.answer(f'Гаразд, давай щось змінимо.\nОтже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
     await callback.answer()
 
 
@@ -154,7 +150,6 @@ async def deselect_all_regions(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-
 @router.callback_query(F.data == "regions_done")
 async def regions_done(callback: CallbackQuery, state: FSMContext):
     await state.set_state(RentFlow.price)
@@ -167,16 +162,15 @@ async def rent_price(message: Message, state: FSMContext):
     price_range = message.text
     try:
         min_price, max_price = map(int, price_range.split("-"))
-        # Оновлюємо стан з мінімальною та максимальною ціною
         await state.update_data(min_price=min_price, max_price=max_price)
     except ValueError:
         await message.answer("Неправильний формат ціни. Використовуйте формат '1000-2000'.")
         return
 
-    # Переходимо до наступного етапу
     await state.set_state(RentFlow.results)
     await message.answer("Виконано пошук за вашими критеріями. Ось результати:")
-    await search_results(message, state)  # Виклик функції для обробки результатів
+    await search_results(message, state) 
+
 
 @router.callback_query(F.data == "prev")
 async def prev_apartment(callback: CallbackQuery, state: FSMContext):
@@ -250,7 +244,7 @@ async def view_saved_apartments(message: Message, state: FSMContext):
         saved_apartments = result.scalars().all()
 
     if not saved_apartments:
-        await message.answer("Ви ще не зберегли жодної квартири.\n\n‼️Потрібно це виправити якнайшвидше‼️")
+        await message.answer("Ви ще не зберегли жодної квартири.\nПотрібно це виправити якнайшвидше‼️\n\n Натискай 🌟 під оголошенням для додавання")
         return
 
     await message.answer("<b>Ось ваші збереження:</b>", parse_mode="HTML", reply_markup=ReplyKeyboardRemove())
@@ -355,11 +349,6 @@ async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     apartment_id = data.get('apartment_id')
 
-    # # Запит номера телефону у користувача
-    # keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    # button = KeyboardButton(text="Поділитися номером телефону", request_contact=True)
-    # keyboard.add(button)
-
     await callback.message.answer(
         "Будь ласка, надайте свій номер телефону для контакту з менеджером:",
         reply_markup=kb.rq_contact
@@ -377,12 +366,8 @@ async def process_phone_number(message: Message, state: FSMContext):
     data = await state.get_data()
     apartment_id = data.get('apartment_id')
 
-    await notify_managers(apartment_id, message, phone_number)
-    
-    # Повідомлення користувачу про успішну відправку    
+    await notify_managers(apartment_id, message, phone_number)    
     await message.answer("Дякуємо! \nМенеджер зв'яжеться з вами!", reply_markup=kb.main)
-
-    
     await state.clear()
 
 @router.callback_query(F.data == "cancel_viewing")
@@ -412,6 +397,7 @@ async def update_data(message: Message):
     await message.answer("‼️ Готово! Дані синхронізовано ‼️")
 
 
+@router.message(F.text == "отримати")
 @router.message(Command("get_data"))
 async def get_user_data(message: Message):
     user_id = message.from_user.id
@@ -445,5 +431,10 @@ async def save_table_to_excel(session: AsyncSession, writer: pd.ExcelWriter, mod
     result = await session.execute(stmt)
     df = pd.DataFrame([row.__dict__ for row in result.scalars().all()])
     df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+
+@router.message(F.text)
+async def handle_unknown_message(message: Message):
+    await message.answer(f"Я не розумію... \nЯкщо потрібна допомога, пиши нашому менеджеру {MANAGER_USERNAME}!", reply_markup=kb.main)
 
     
