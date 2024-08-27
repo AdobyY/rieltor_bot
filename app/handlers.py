@@ -55,6 +55,7 @@ async def start(message: Message):
 @router.message(Command("change_settings"))
 @router.message(F.text == "Змінити параметри пошуку 🔄")
 async def change(message: Message):
+    user = message.from_user
     await message.answer(f'Гаразд, давай щось змінимо.\nОтже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
 
 
