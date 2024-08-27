@@ -16,25 +16,42 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     tg_id = Column(BigInteger, unique=True)
-    first_name = Column(String(50), nullable=True)
-    last_name = Column(String(50), nullable=True)
-    username = Column(String(50), nullable=True)
+    first_name = Column(String(64), nullable=False)
+    last_name = Column(String(64), nullable=True)
+    username = Column(String(32), nullable=True)
+    min_price = Column(Integer, nullable=True)
+    max_price = Column(Integer, nullable=True)
+    saved_regions = Column(String(500), nullable=True)
 
 class Apartment(Base):
     __tablename__ = 'apartments'
 
+    # id = Column(Integer, primary_key=True, autoincrement=True)
+    # area = Column(Integer, nullable=True)
+    # address = Column(String(125), nullable=True)
+    # region = Column(String(125), nullable=True)
+    # price = Column(Integer, nullable=True)
+    # number_of_rooms = Column(Integer, nullable=True)
+    # article = Column(String(225), nullable=True)
+    # floor = Column(Integer, nullable=True)
+    # metro = Column(String(100), nullable=True)
+    # additional_info = Column(String(100), nullable=True)
     id = Column(Integer, primary_key=True, autoincrement=True)
+    code = Column(String(20), nullable=True)
+    address = Column(String(200), nullable=True)
+    region = Column(String(50), nullable=True)
+    apartment_complex = Column(String(50), nullable=True)
     area = Column(Integer, nullable=True)
-    address = Column(String(125), nullable=True)
-    region = Column(String(125), nullable=True)
     price = Column(Integer, nullable=True)
     number_of_rooms = Column(Integer, nullable=True)
-    article = Column(String(225), nullable=True)
     floor = Column(Integer, nullable=True)
-    metro = Column(String(100), nullable=True)
-    additional_info = Column(String(100), nullable=True)
+    total_floors = Column(Integer, nullable=True)
+    pets = Column(String(5), nullable=True)
+    can_be_bought = Column(String(5), nullable=True)
+    article = Column(String(225), nullable=True)
 
     saved_apartments = relationship('SavedApartment', back_populates='apartment')
+
 
 class SavedApartment(Base):
     __tablename__ = 'saved_apartments'
