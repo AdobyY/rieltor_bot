@@ -63,17 +63,6 @@ async def search_results(message: Message, state: FSMContext):
 async def send_apartment_message(entity: Union[Message, CallbackQuery], apartments: list, index: int):
     apartment = apartments[index]
     total_count = len(apartments)
-    result_text = (
-        f"<b>Результат</b> {index + 1}/{total_count}\n\n"
-        f"📍Адреса: {apartment.address}\n"
-        f"💵Ціна: {apartment.price}$\n"
-        f"🌄Регіон: {apartment.region}\n"
-        f"🏘Кількість кімнат: {apartment.number_of_rooms}\n"
-        f"🔺Поверх: {apartment.floor}\n"
-        f"〽️Метро: {apartment.metro}\n"
-        f"{'' if apartment.additional_info is None else f'❕{apartment.additional_info}'}\n"
-        f'⚡️<a href="{apartment.article}">Стаття</a>\n'
-    )
     
     result_text = (
         f"<b>Результат</b> {index + 1}/{total_count}\n\n"
@@ -81,7 +70,7 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"🏘 Кімнат: {apartment.number_of_rooms}\n"
         f"{apartment.area}m^2\n"
         f"📍{apartment.region} район. {apartment.address}\n"
-        f"Житловий комплекс: {apartment.apartment_complex}\n"
+        f"🌄Житловий комплекс: {apartment.apartment_complex}\n"
         f"💵Ціна: {apartment.price}\n"
         f"🔺Поверх: {apartment.floor}/{apartment.total_floors}\n"
         f"Можна з тваринками!!\n" if apartment.floor == "Так" else ""
