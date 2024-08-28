@@ -70,12 +70,16 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"🏠 Кімнат: {apartment.number_of_rooms}\n"
         f"📐 {apartment.area}m^2\n"
         f"📍 {apartment.region} район. {apartment.address}\n"
-        f"🏢 Житловий комплекс: {apartment.apartment_complex}\n"
+        f"🏢 Житловий комплекс: {apartment.residential_complex}\n"
         f"💵 Ціна: {apartment.price}\n"
         f"🔺 Поверх: {apartment.floor}/{apartment.total_floors}"
-        f"\n🐾 Можна з тваринками!!" if apartment.floor == "Так" else ""
-        f"\n✅ Готова до купівлі" if apartment.floor == "Так" else ""
     )
+    
+    # Add conditional information
+    if apartment.pets_allowed == "Так":
+        result_text += "\n🐾 Можна з тваринками!!"
+    if apartment.can_purchase == "Так":
+        result_text += "\n✅ Готова до купівлі"
 
     user_id = entity.from_user.id if isinstance(entity, Message) else entity.message.chat.id
     async with async_session() as session:

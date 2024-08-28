@@ -21,30 +21,36 @@ async def set_user(tg_id, first_name, last_name, username):
 async def set_apartments(df):
     async with async_session() as session:
         for index, row in df.iterrows():
-            apartment = await session.scalar(select(Apartment).where(Apartment.address == row['Адреса']))
+            apartment = await session.scalar(select(Apartment).where(Apartment.code == row['Код']))  # Check by code
             
             if not apartment:
                 new_apartment = Apartment(
-                    area=row['Площа'],
+                    code=row['Код'],  # Unique identifier
                     address=row['Адреса'],
-                    region=row['Регіон'],
-                    price=row['Ціна'],
-                    number_of_rooms=row[' Кількість кімнат'],
-                    article=row['Посилання на статтю'],
+                    region=row['Район'],  # New field updated
+                    residential_complex=row['ЖК'],  # New field added
+                    area=row['Квадратура'],  # Updated field
+                    price=row['Ціна ($)'],  # Updated field
+                    number_of_rooms=row['Кількість кімнат'],  # Updated field
                     floor=row['Поверх'] if pd.notnull(row['Поверх']) else None,
-                    metro=row['Метро'] if pd.notnull(row['Метро']) else None,
-                    additional_info=row['Додаткова інформація'] if pd.notnull(row['Додаткова інформація']) else None
+                    total_floors=row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None,  # New field added
+                    pets_allowed=row['Тваринки (так/ні)'] == 'Так',  # New field added, converted to boolean
+                    can_purchase=row['Чи можна купити квартиру?'] == 'Так',  # New field added, converted to boolean
+                    article=row['Посилання на статтю']
                 )
                 session.add(new_apartment)
                 await session.commit()
             else:
-                apartment.area = row['Площа']
-                apartment.region = row['Регіон']
-                apartment.price = row['Ціна']
-                apartment.number_of_rooms = row[' Кількість кімнат']
-                apartment.article = row['Посилання на статтю']
+                apartment.address = row['Адреса']
+                apartment.region = row['Район']  # Update existing field
+                apartment.residential_complex = row['ЖК']  # Update existing field
+                apartment.area = row['Квадратура']  # Update existing field
+                apartment.price = row['Ціна ($)']  # Update existing field
+                apartment.number_of_rooms = row['Кількість кімнат']  # Update existing field
                 apartment.floor = row['Поверх'] if pd.notnull(row['Поверх']) else None
-                apartment.metro = row['Метро'] if pd.notnull(row['Метро']) else None
-                apartment.additional_info = row['Додаткова інформація'] if pd.notnull(row['Додаткова інформація']) else None
+                apartment.total_floors = row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None  # Update existing field
+                apartment.pets_allowed = row['Тваринки (так/ні)'] == 'Так'  # Update existing field, converted to boolean
+                apartment.can_purchase = row['Чи можна купити квартиру?'] == 'Так'  # Update existing field, converted to boolean
+                apartment.article = row['Посилання на статтю']  # Update existing field
                 await session.commit()
 
