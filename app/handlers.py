@@ -313,6 +313,12 @@ async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
     
     await callback.answer()
 
+
+@router.message(F.text == "Скасувати")
+async def cancel(message: Message):
+    await message.answer("Запис на перегляд скасовано.", reply_markup=kb.main)
+    
+
 @router.message(RentFlow.phone_number)
 async def process_phone_number(message: Message, state: FSMContext):
     contact = message.contact
@@ -333,6 +339,7 @@ async def process_phone_number(message: Message, state: FSMContext):
     await notify_managers(apartment_id, message, phone_number)    
     await message.answer("Дякуємо! \nМенеджер зв'яжеться з вами!", reply_markup=kb.main)
     await state.clear()
+
 
 @router.callback_query(F.data == "cancel_viewing")
 async def cancel_viewing(callback: CallbackQuery, state: FSMContext):

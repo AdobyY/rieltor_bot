@@ -112,6 +112,7 @@ confirmation = InlineKeyboardMarkup(
 
 
 rq_contact = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text="Поділитися номером телефону 📞", request_contact=True)]],
+    keyboard=[[KeyboardButton(text="Поділитися номером телефону 📞", request_contact=True)],
+              [KeyboardButton(text="Скасувати")]],
     resize_keyboard=True
 )
