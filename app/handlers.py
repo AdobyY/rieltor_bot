@@ -15,10 +15,10 @@ from app.handlers_utils import *
 
 import os
 import pandas as pd
-from data import get_data
 
 
 router = Router()
+
 
 @router.message(CommandStart())
 async def start(message: Message):

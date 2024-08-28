@@ -1,15 +1,15 @@
 from sqlalchemy import Integer, BigInteger, String, ForeignKey, Column
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-# PostgreSQL connection string
-DATABASE_URL = "postgresql+asyncpg://postgres:adoby@localhost/apartments"
+from app.constants import DATABASE_URL
 
 engine = create_async_engine(DATABASE_URL)
 async_session = async_sessionmaker(engine)
 
 class Base(DeclarativeBase):
     pass
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -22,6 +22,7 @@ class User(Base):
     min_price = Column(Integer, nullable=True)
     max_price = Column(Integer, nullable=True)
     saved_regions = Column(String(500), nullable=True)
+
 
 class Apartment(Base):
     __tablename__ = 'apartments'

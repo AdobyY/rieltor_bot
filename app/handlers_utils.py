@@ -5,11 +5,32 @@ from aiogram.exceptions import TelegramBadRequest
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import re
 import pandas as pd
 from typing import Union
 
 import app.keyboards as kb
 from app.database.models import async_session, Apartment, SavedApartment
+from app.constants import GOOGLE_SHEET_URL
+
+
+def convert_google_sheet_url(url):
+    # Regular expression to match and capture the necessary part of the URL
+    pattern = r'https://docs\.google\.com/spreadsheets/d/([a-zA-Z0-9-_]+)(/edit#gid=(\d+)|/edit.*)?'
+
+    # Replace function to construct the new URL for CSV export
+    # If gid is present in the URL, it includes it in the export URL, otherwise, it's omitted
+    replacement = lambda m: f'https://docs.google.com/spreadsheets/d/{m.group(1)}/export?' + (f'gid={m.group(3)}&' if m.group(3) else '') + 'format=csv'
+
+    # Replace using regex
+    new_url = re.sub(pattern, replacement, url)
+
+    return new_url
+
+def get_data():
+    url = convert_google_sheet_url(GOOGLE_SHEET_URL)
+    df = pd.read_csv(url)
+    return(df)
 
 
 async def search_results(message: Message, state: FSMContext):
@@ -52,6 +73,19 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"〽️Метро: {apartment.metro}\n"
         f"{'' if apartment.additional_info is None else f'❕{apartment.additional_info}'}\n"
         f'⚡️<a href="{apartment.article}">Стаття</a>\n'
+    )
+    
+    result_text = (
+        f"<b>Результат</b> {index + 1}/{total_count}\n\n"
+        f"⚡️<a href='{apartment.article}'>{apartment.code}</a>\n"
+        f"🏘 Кімнат: {apartment.number_of_rooms}\n"
+        f"{apartment.area}m^2\n"
+        f"📍{apartment.region} район. {apartment.address}\n"
+        f"Житловий комплекс: {apartment.apartment_complex}\n"
+        f"💵Ціна: {apartment.price}\n"
+        f"🔺Поверх: {apartment.floor}/{apartment.total_floors}\n"
+        f"Можна з тваринками!!\n" if apartment.floor == "Так" else ""
+        f"Готова до купівлі" if apartment.floor == "Так" else ""
     )
 
     user_id = entity.from_user.id if isinstance(entity, Message) else entity.message.chat.id
