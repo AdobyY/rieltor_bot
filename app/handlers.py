@@ -47,14 +47,22 @@ async def start(message: Message):
     else:
         await message.answer(
             "Привіт, давай я допоможу тобі вибрати квартиру мрії!\nВибери те, що тобі потрібно!",
-            reply_markup=kb.start  # Клавіатура для звичайних користувачів
+            reply_markup=kb.start
         )
 
 @router.message(Command("change_settings"))
 @router.message(F.text == "Змінити параметри пошуку 🔄")
 async def change(message: Message):
     user = message.from_user
+    await rq.set_user(user.id, user.first_name, user.last_name, user.username)
     await message.answer(f'Гаразд, давай щось змінимо.\nОтже, {user.first_name or user.username}, ти хочеш...', reply_markup=kb.start)
+
+
+@router.message(Command("search"))
+async def change(message: Message):
+    user = message.from_user
+    await rq.set_user(user.id, user.first_name, user.last_name, user.username)
+    await message.answer(f'Давай знайдемо тобі щось!', reply_markup=kb.start)
 
 
 @router.callback_query(F.data == "rent")
@@ -67,7 +75,7 @@ async def rent(callback: CallbackQuery, state: FSMContext):
 # Здаємо квартиру
 @router.callback_query(F.data == "sell")
 async def sell(callback: CallbackQuery):
-    await callback.message.answer("Напишіть нашому менеджеру \nmanager.username \nТам ви зможете розмістити свою квартиру у нашому боті!", reply_markup=kb.back)
+    await callback.message.answer(f"Напишіть нашому менеджеру \n{MANAGER_USERNAME} \nТам ви зможете розмістити свою квартиру у нашому боті!", reply_markup=kb.back)
     await callback.answer()
 
 
@@ -161,14 +169,24 @@ async def rent_price(message: Message, state: FSMContext):
     price_range = message.text
     try:
         min_price, max_price = map(int, price_range.split("-"))
-        await state.update_data(min_price=min_price, max_price=max_price)
     except ValueError:
         await message.answer("Неправильний формат ціни. Використовуйте формат '1000-2000'.")
         return
+    
+    async with async_session() as session:
+        stmt = select(User).where(User.tg_id == message.from_user.id )
+        result = await session.execute(stmt)
+        user = result.scalars().first()
+
+        if user:
+            user.min_price = min_price
+            user.max_price = max_price
+
+        await session.commit()
 
     await state.set_state(RentFlow.results)
     await message.answer("Виконано пошук за вашими критеріями. Ось результати:")
-    await search_results(message, state) 
+    await search_results(message, state)
 
 
 @router.callback_query(F.data == "prev")
@@ -282,7 +300,6 @@ async def schedule_viewing(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "confirm_viewing")
 async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
     data = await state.get_data()
     apartment_id = data.get('apartment_id')
 
@@ -302,6 +319,16 @@ async def process_phone_number(message: Message, state: FSMContext):
     phone_number = contact.phone_number
     data = await state.get_data()
     apartment_id = data.get('apartment_id')
+
+    async with async_session() as session:
+        stmt = select(User).where(User.tg_id == contact.user_id )
+        result = await session.execute(stmt)
+        user = result.scalars().first()
+
+        if user:
+            user.phone_number = phone_number
+
+        await session.commit()
 
     await notify_managers(apartment_id, message, phone_number)    
     await message.answer("Дякуємо! \nМенеджер зв'яжеться з вами!", reply_markup=kb.main)
@@ -346,7 +373,7 @@ async def get_user_data(message: Message):
         return
     
     # Отримання даних з бази та створення ексель файлу
-    excel_file_path = os.path.join(os.getcwd(), "database_data.xlsx")
+    excel_file_path = os.path.join(os.getcwd(), "Database.xlsx")
     async with async_session() as session:
         with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
             await save_table_to_excel(session, writer, Apartment, "Apartments")
@@ -355,8 +382,8 @@ async def get_user_data(message: Message):
     try:
         # Send the file directly using the file path
         await message.answer_document(
-            document=FSInputFile(path="database_data.xlsx"),
-            caption="Ось теперішня база"
+            document=FSInputFile(path=excel_file_path),
+            caption="Ось дані бази у форматі Excel"
             )
     except Exception as e:
         await message.answer(f"Помилка при відправці файлу: {str(e)}")
@@ -364,6 +391,6 @@ async def get_user_data(message: Message):
 
 @router.message(F.text)
 async def handle_unknown_message(message: Message):
-    await message.answer(f"Я не розумію... \nЯкщо потрібна допомога, пиши нашому менеджеру {MANAGER_USERNAME}!", reply_markup=kb.main)
+    await message.answer(f"Я не розумію... \n\nЯкщо потрібна допомога, пиши нашому менеджеру {MANAGER_USERNAME}!", reply_markup=kb.main)
 
     

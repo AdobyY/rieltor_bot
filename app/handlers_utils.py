@@ -68,17 +68,17 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
         f"📝 <b>Результат</b> {index + 1}/{total_count}\n\n"
         f"⚡️ <a href='{apartment.article}'>{apartment.code}</a>\n"
         f"🏠 Кімнат: {apartment.number_of_rooms}\n"
-        f"📐 {apartment.area}m^2\n"
-        f"📍 {apartment.region} район. {apartment.address}\n"
-        f"🏢 Житловий комплекс: {apartment.residential_complex}\n"
-        f"💵 Ціна: {apartment.price}\n"
+        f"📐 {apartment.area}m²\n"
+        f"📍 {apartment.region} район\n📍 {apartment.address}\n"
+        f"🏢 ЖК: {apartment.residential_complex}\n"
+        f"💵 Ціна: {apartment.price}$\n"
         f"🔺 Поверх: {apartment.floor}/{apartment.total_floors}"
     )
     
     # Add conditional information
-    if apartment.pets_allowed == "Так":
+    if apartment.pets_allowed == "1":
         result_text += "\n🐾 Можна з тваринками!!"
-    if apartment.can_purchase == "Так":
+    if apartment.can_purchase == "1":
         result_text += "\n✅ Готова до купівлі"
 
     user_id = entity.from_user.id if isinstance(entity, Message) else entity.message.chat.id

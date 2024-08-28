@@ -21,22 +21,12 @@ class User(Base):
     username = Column(String(32), nullable=True)
     min_price = Column(Integer, nullable=True)
     max_price = Column(Integer, nullable=True)
-    saved_regions = Column(String(500), nullable=True)
+    phone_number = Column(Integer, nullable=True)
 
 
 class Apartment(Base):
     __tablename__ = 'apartments'
 
-    # id = Column(Integer, primary_key=True, autoincrement=True)
-    # area = Column(Integer, nullable=True)
-    # address = Column(String(125), nullable=True)
-    # region = Column(String(125), nullable=True)
-    # price = Column(Integer, nullable=True)
-    # number_of_rooms = Column(Integer, nullable=True)
-    # article = Column(String(225), nullable=True)
-    # floor = Column(Integer, nullable=True)
-    # metro = Column(String(100), nullable=True)
-    # additional_info = Column(String(100), nullable=True)
     id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(20), nullable=True)
     address = Column(String(200), nullable=True)

@@ -27,17 +27,21 @@ async def notify_managers(apartment_id: int, message: Message, phone_number):
             return
 
         message_text = (
-            f"Користувач {message.from_user.full_name} (ID: {message.from_user.id}) \n{message.from_user.username}\nЗ номером телефону: {phone_number}\nХоче записатись на перегляд квартири:\n\n"
-            f"⚡️<a href='{apartment.article}'>{apartment.code}</a>\n"
-            f"🏘 Кімнат: {apartment.number_of_rooms}\n"
-            f"{apartment.area}m^2\n"
-            f"📍{apartment.region} район. {apartment.address}\n"
-            f"🌄Житловий комплекс: {apartment.apartment_complex}\n"
-            f"💵Ціна: {apartment.price}\n"
-            f"🔺Поверх: {apartment.floor}/{apartment.total_floors}\n"
-            f"Можна з тваринками!!\n" if apartment.floor == "Так" else ""
-            f"Готова до купівлі" if apartment.floor == "Так" else ""
+            f"Користувач {message.from_user.full_name} \n(ID: {message.from_user.id}) \n@{message.from_user.username}\nЗ номером телефону: +{phone_number}\nХоче записатись на перегляд квартири:\n\n"
+            f"⚡️ <a href='{apartment.article}'>{apartment.code}</a>\n"
+            f"🏠 Кімнат: {apartment.number_of_rooms}\n"
+            f"📐 {apartment.area}m²\n"
+            f"📍 {apartment.region} район\n📍 {apartment.address}\n"
+            f"🏢 ЖК: {apartment.residential_complex}\n"
+            f"💵 Ціна: {apartment.price}$\n"
+            f"🔺 Поверх: {apartment.floor}/{apartment.total_floors}"
         )
+    
+        # Add conditional information
+        if apartment.pets_allowed == "1":
+            message_text += "\n🐾 Можна з тваринками!!"
+        if apartment.can_purchase == "1":
+            message_text += "\n✅ Готова до купівлі"
 
         for manager_id in MANAGERS:
             try:
