@@ -37,10 +37,6 @@ async def search_results(message: Message, state: FSMContext, min_price, max_pri
     data = await state.get_data()
     selected_rooms = {int(room) for room in data.get("selected_rooms", set())}
     selected_regions = {str(region) for region in data.get("selected_regions", set())}
-    # min_price = float(data.get("min_p"))
-    # max_price = float(data.get("max_p"))
-    # print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
-    print(max_price, min_price)
 
     async with async_session() as session:
         stmt = select(Apartment).where(

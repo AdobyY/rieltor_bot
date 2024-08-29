@@ -273,23 +273,17 @@ async def view_saved_apartments(message: Message, state: FSMContext):
 
 @router.callback_query(F.data.startswith("schedule_viewing"))
 async def schedule_viewing(callback: CallbackQuery, state: FSMContext):
-    # Extract apartment ID from the callback data
-    apartment_id = callback.data.split('_')[2]  # Assuming the ID is the last part after the last '_'
-    print(apartment_id)
-    # Convert apartment_id to integer if necessary
+    apartment_id = callback.data.split('_')[2]
+    
     try:
         apartment_id = int(apartment_id)
     except ValueError:
         await callback.answer("Невірний формат ID квартири.")
         return
     
-    # Save the apartment ID in the state
     await state.update_data(apartment_id=apartment_id)
-    
-    # Set the state to wait for confirmation
     await state.set_state("waiting_for_confirmation")
     
-    # Send confirmation message
     await callback.message.answer(
         "Ви дійсно бажаєте записатися на перегляд цієї квартири?\n\n"
         "Виберіть один з варіантів:",
