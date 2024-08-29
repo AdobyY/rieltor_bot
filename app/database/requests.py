@@ -18,39 +18,39 @@ async def set_user(tg_id, first_name, last_name, username):
             await session.commit()
  
 
-async def set_apartments(df):
+async def set_apartments(df: pd.DataFrame):
     async with async_session() as session:
         for index, row in df.iterrows():
-            apartment = await session.scalar(select(Apartment).where(Apartment.code == row['Код']))  # Check by code
+            apartment = await session.scalar(select(Apartment).where(Apartment.code == row['Код']))
             
             if not apartment:
                 new_apartment = Apartment(
                     code=row['Код'],  # Unique identifier
                     address=row['Адреса'],
-                    region=row['Район'],  # New field updated
-                    residential_complex=row['ЖК'],  # New field added
-                    area=row['Квадратура'],  # Updated field
-                    price=row['Ціна ($)'],  # Updated field
-                    number_of_rooms=row['Кількість кімнат'],  # Updated field
+                    region=row['Район'],
+                    residential_complex=row['ЖК'],
+                    area=row['Квадратура'],
+                    price=row['Ціна ($)'],
+                    number_of_rooms=row['Кількість кімнат'],
                     floor=row['Поверх'] if pd.notnull(row['Поверх']) else None,
-                    total_floors=row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None,  # New field added
-                    pets_allowed=row['Тваринки (так/ні)'] == 'Так',  # New field added, converted to boolean
-                    can_purchase=row['Чи можна купити квартиру?'] == 'Так',  # New field added, converted to boolean
+                    total_floors=row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None,
+                    pets_allowed=row['Тваринки (так/ні)'],  # Assuming this is already a boolean
+                    can_purchase=row['Чи можна купити квартиру?'],  # Assuming this is already a boolean
                     article=row['Посилання на статтю']
                 )
                 session.add(new_apartment)
                 await session.commit()
             else:
                 apartment.address = row['Адреса']
-                apartment.region = row['Район']  # Update existing field
-                apartment.residential_complex = row['ЖК']  # Update existing field
-                apartment.area = row['Квадратура']  # Update existing field
-                apartment.price = row['Ціна ($)']  # Update existing field
-                apartment.number_of_rooms = row['Кількість кімнат']  # Update existing field
+                apartment.region = row['Район']
+                apartment.residential_complex = row['ЖК']
+                apartment.area = row['Квадратура']
+                apartment.price = row['Ціна ($)']
+                apartment.number_of_rooms = row['Кількість кімнат']
                 apartment.floor = row['Поверх'] if pd.notnull(row['Поверх']) else None
-                apartment.total_floors = row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None  # Update existing field
-                apartment.pets_allowed = row['Тваринки (так/ні)'] == 'Так'  # Update existing field, converted to boolean
-                apartment.can_purchase = row['Чи можна купити квартиру?'] == 'Так'  # Update existing field, converted to boolean
-                apartment.article = row['Посилання на статтю']  # Update existing field
+                apartment.total_floors = row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None
+                apartment.pets_allowed = row['Тваринки (так/ні)']  # Assuming this is already a boolean
+                apartment.can_purchase = row['Чи можна купити квартиру?']  # Assuming this is already a boolean
+                apartment.article = row['Посилання на статтю']
                 await session.commit()
 
