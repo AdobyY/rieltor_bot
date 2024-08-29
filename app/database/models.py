@@ -50,7 +50,7 @@ class SavedApartment(Base):
     __tablename__ = 'saved_apartments'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
+    user_id = Column(BigInteger, ForeignKey('users.tg_id'), nullable=False)
     apartment_id = Column(Integer, ForeignKey('apartments.id'), nullable=False)
 
     apartment = relationship('Apartment', back_populates='saved_apartments')

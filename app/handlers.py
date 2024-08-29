@@ -186,7 +186,7 @@ async def rent_price(message: Message, state: FSMContext):
 
     await state.set_state(RentFlow.results)
     await message.answer("Виконано пошук за вашими критеріями. Ось результати:")
-    await search_results(message, state)
+    await search_results(message, state, min_price, max_price)
 
 
 @router.callback_query(F.data == "prev")
