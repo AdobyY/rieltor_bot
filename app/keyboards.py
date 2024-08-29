@@ -36,6 +36,8 @@ async def get_rooms_keyboard(selected_rooms=None):
         stmt = select(Apartment.number_of_rooms).distinct()
         result = await session.execute(stmt)
         room_numbers = result.scalars().all()
+
+    room_numbers.sort()    
     
     buttons = []
     for room in room_numbers:

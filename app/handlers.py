@@ -315,8 +315,10 @@ async def confirm_viewing(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message(F.text == "Скасувати")
-async def cancel(message: Message):
+async def cancel(message: Message, state: FSMContext):
     await message.answer("Запис на перегляд скасовано.", reply_markup=kb.main)
+    await state.clear()
+
     
 
 @router.message(RentFlow.phone_number)

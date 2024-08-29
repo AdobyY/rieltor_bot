@@ -35,10 +35,11 @@ def get_data():
 
 async def search_results(message: Message, state: FSMContext):
     data = await state.get_data()
-    selected_rooms = data.get("selected_rooms", set())
-    selected_regions = data.get("selected_regions", set())
-    min_price = data.get("min_price", 0)
-    max_price = data.get("max_price", float('inf'))
+    selected_rooms = {int(room) for room in data.get("selected_rooms", set())}
+    selected_regions = {str(region) for region in data.get("selected_regions", set())}
+    min_price = float(data.get("min_price", 0))
+    max_price = float(data.get("max_price", float('inf')))
+
 
     async with async_session() as session:
         stmt = select(Apartment).where(
@@ -76,9 +77,9 @@ async def send_apartment_message(entity: Union[Message, CallbackQuery], apartmen
     )
     
     # Add conditional information
-    if apartment.pets_allowed == "1":
+    if apartment.pets_allowed:
         result_text += "\n🐾 Можна з тваринками!!"
-    if apartment.can_purchase == "1":
+    if apartment.can_purchase:
         result_text += "\n✅ Готова до купівлі"
 
     user_id = entity.from_user.id if isinstance(entity, Message) else entity.message.chat.id

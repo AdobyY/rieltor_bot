@@ -38,9 +38,9 @@ async def notify_managers(apartment_id: int, message: Message, phone_number):
         )
     
         # Add conditional information
-        if apartment.pets_allowed == "1":
+        if apartment.pets_allowed:
             message_text += "\n🐾 Можна з тваринками!!"
-        if apartment.can_purchase == "1":
+        if apartment.can_purchase:
             message_text += "\n✅ Готова до купівлі"
 
         for manager_id in MANAGERS:

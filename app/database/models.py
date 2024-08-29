@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, BigInteger, String, ForeignKey, Column
+from sqlalchemy import Integer, BigInteger, String, Boolean, ForeignKey, Column
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -21,7 +21,9 @@ class User(Base):
     username = Column(String(32), nullable=True)
     min_price = Column(Integer, nullable=True)
     max_price = Column(Integer, nullable=True)
-    phone_number = Column(Integer, nullable=True)
+    phone_number = Column(String(15), nullable=True)
+
+    saved_apartments = relationship('SavedApartment', back_populates='user')
 
 
 class Apartment(Base):
@@ -37,8 +39,8 @@ class Apartment(Base):
     number_of_rooms = Column(Integer, nullable=True)
     floor = Column(Integer, nullable=True)
     total_floors = Column(Integer, nullable=True)
-    pets_allowed = Column(String(5), nullable=True)
-    can_purchase = Column(String(5), nullable=True)
+    pets_allowed = Column(Boolean, nullable=True)
+    can_purchase = Column(Boolean, nullable=True)
     article = Column(String(225), nullable=True)
 
     saved_apartments = relationship('SavedApartment', back_populates='apartment')
@@ -48,10 +50,11 @@ class SavedApartment(Base):
     __tablename__ = 'saved_apartments'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(BigInteger, ForeignKey('users.id'), nullable=False)
     apartment_id = Column(Integer, ForeignKey('apartments.id'), nullable=False)
 
     apartment = relationship('Apartment', back_populates='saved_apartments')
+    user = relationship('User', back_populates='saved_apartments')
 
 
 async def async_main():
