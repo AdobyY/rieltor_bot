@@ -20,12 +20,24 @@ async def set_user(tg_id, first_name, last_name, username):
 
 async def set_apartments(df: pd.DataFrame):
     async with async_session() as session:
+        existing_apartments = await session.execute(select(Apartment))
+        existing_apartments = existing_apartments.scalars().all()
+
+        df_codes = set(df['Код'])
+
+        # Видалити квартири з бази даних, яких немає в DataFrame
+        for apartment in existing_apartments:
+            if apartment.code not in df_codes:
+                await session.delete(apartment)
+        
+        await session.commit()
+
         for index, row in df.iterrows():
             apartment = await session.scalar(select(Apartment).where(Apartment.code == row['Код']))
             
             if not apartment:
                 new_apartment = Apartment(
-                    code=row['Код'],  # Unique identifier
+                    code=row['Код'],
                     address=row['Адреса'],
                     region=row['Район'],
                     residential_complex=row['ЖК'],
@@ -34,12 +46,11 @@ async def set_apartments(df: pd.DataFrame):
                     number_of_rooms=row['Кількість кімнат'],
                     floor=row['Поверх'] if pd.notnull(row['Поверх']) else None,
                     total_floors=row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None,
-                    pets_allowed=row['Тваринки (так/ні)'],  # Assuming this is already a boolean
-                    can_purchase=row['Чи можна купити квартиру?'],  # Assuming this is already a boolean
+                    pets_allowed=row['Тваринки (так/ні)'],
+                    can_purchase=row['Чи можна купити квартиру?'],
                     article=row['Посилання на статтю']
                 )
                 session.add(new_apartment)
-                await session.commit()
             else:
                 apartment.address = row['Адреса']
                 apartment.region = row['Район']
@@ -49,8 +60,9 @@ async def set_apartments(df: pd.DataFrame):
                 apartment.number_of_rooms = row['Кількість кімнат']
                 apartment.floor = row['Поверх'] if pd.notnull(row['Поверх']) else None
                 apartment.total_floors = row['Всього поверхів'] if pd.notnull(row['Всього поверхів']) else None
-                apartment.pets_allowed = row['Тваринки (так/ні)']  # Assuming this is already a boolean
-                apartment.can_purchase = row['Чи можна купити квартиру?']  # Assuming this is already a boolean
+                apartment.pets_allowed = row['Тваринки (так/ні)']
+                apartment.can_purchase = row['Чи можна купити квартиру?']
                 apartment.article = row['Посилання на статтю']
-                await session.commit()
+        
+        await session.commit()
 
