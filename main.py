@@ -11,7 +11,7 @@ from app.database.models import async_main
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler("bot.log"),
