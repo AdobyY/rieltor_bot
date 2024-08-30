@@ -160,7 +160,7 @@ async def deselect_all_regions(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "regions_done")
 async def regions_done(callback: CallbackQuery, state: FSMContext):
     await state.set_state(RentFlow.price)
-    await callback.message.answer("Яку суму ви бажаєте витратити? Наприклад: 1000-2000")
+    await callback.message.answer("Яку суму в доларах ви бажаєте витратити? Наприклад: 1000-2000")
     await callback.answer()
 
 
