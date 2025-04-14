@@ -7,7 +7,8 @@ https://github.com/user-attachments/assets/50cd6204-f948-4e7a-951b-46c8cc50acc1
 ![image_2025-04-14_10-27-09](https://github.com/user-attachments/assets/d8d6fe04-ec9f-4ac3-97d2-9271d270c8db)
 
 This is a Telegram bot built using `aiogram 3` that helps users find their dream apartments. The bot allows users to browse available apartments, save their favorite ones, and schedule viewings. Managers have access to a database of all apartments, users, and saved apartments in Excel format.
-[Figma Design](https://www.figma.com/design/VEIlO16CV9vi4d2EIQwnpN/Rieltor_bot?node-id=0-1&p=f&t=K0NuqwBdLuSaLr23-0)
+
+## [Figma Design](https://www.figma.com/design/VEIlO16CV9vi4d2EIQwnpN/Rieltor_bot?node-id=0-1&p=f&t=K0NuqwBdLuSaLr23-0)
 
 ## Features
 
