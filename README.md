@@ -29,7 +29,7 @@ This is a Telegram bot built using `aiogram 3` that helps users find their dream
 
     ```bash
     git clone https://github.com/yourusername/real-estate-bot.git
-    cd real-estate-bot
+    cd rieltor-bot
     ```
 
 2. **Create a virtual environment**:
